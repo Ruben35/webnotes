@@ -1,6 +1,6 @@
 import Head from "next/head";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import * as yup from "yup";
 
 export default function Home() {
   const [notes, setNotes] = useState([]);
@@ -26,27 +26,33 @@ export default function Home() {
     e.preventDefault();
     const { user, note } = e.currentTarget.elements;
 
-    if (user.value === "" || note.value === "") {
-      alert("Completa todos los campos.");
-      return;
-    }
+    let schema = yup.object().shape({
+      user: yup.string().required(),
+      note: yup.string().required(),
+    });
 
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user: user.value, note: note.value }),
-    };
-
-    fetch(process.env.NEXT_PUBLIC_URL_API + "/notes", requestOptions).then(
-      (response) => {
-        if (response.status === 200) {
-          alert("Nota agregada con éxito");
-          fetchNotes();
-          user.value = "";
-          note.value = "";
-        } else alert("Error en servidor");
+    schema.isValid({ user: user.value, note: note.value }).then((valid) => {
+      if (!valid) {
+        alert("Completa todos los campos.");
+        return;
       }
-    );
+
+      const requestOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: user.value, note: note.value }),
+      };
+      fetch(process.env.NEXT_PUBLIC_URL_API + "/notes", requestOptions).then(
+        (response) => {
+          if (response.status === 200) {
+            alert("Nota agregada con éxito");
+            fetchNotes();
+            user.value = "";
+            note.value = "";
+          } else alert("Error en servidor");
+        }
+      );
+    });
   };
   return (
     <>
